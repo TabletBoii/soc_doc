@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>classes.TwitterMetricParser &mdash; Soc 0.0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../../index.html" class="icon icon-home"> Soc
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">SocialServicesMetricsParser</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Soc</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">classes.TwitterMetricParser</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for classes.TwitterMetricParser</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Child class inherited from SocMetricParser for instagram. This class using twitter api</span>
+<span class="sd">    with tabular method.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">ABC</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">select</span><span class="p">,</span> <span class="n">update</span><span class="p">,</span> <span class="n">desc</span>
+<span class="kn">from</span> <span class="nn">abstarction</span> <span class="kn">import</span> <span class="n">SocMetricParserAbstraction</span>
+<span class="kn">from</span> <span class="nn">models.models</span> <span class="kn">import</span> <span class="n">Tokens</span><span class="p">,</span> <span class="n">Resources</span><span class="p">,</span> <span class="n">ResourceMetrics</span>
+<span class="kn">from</span> <span class="nn">utilities.Utilities</span> <span class="kn">import</span> <span class="n">parse_username_from_url</span><span class="p">,</span> <span class="n">serialize_response_to_json</span>
+
+<div class="viewcode-block" id="TwitterMetricParser"><a class="viewcode-back" href="../../classes.html#classes.TwitterMetricParser.TwitterMetricParser">[docs]</a><span class="k">class</span> <span class="nc">TwitterMetricParser</span><span class="p">(</span><span class="n">SocMetricParserAbstraction</span><span class="p">,</span> <span class="n">ABC</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">header</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">db_session</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">soc_type</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            inits SocMetricParserAbstaction with meta data and database session</span>
+
+<span class="sd">            :param header: steady header value</span>
+<span class="sd">            :type header: dict</span>
+<span class="sd">            :param db_session: dictionary of specified sql alchemy sessions</span>
+<span class="sd">            :type db_session: dict</span>
+<span class="sd">            :param soc_type: type of social network specified in SocTypes enum</span>
+<span class="sd">            :type soc_type: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">db_session</span><span class="p">,</span> <span class="n">soc_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">twitter_tokens</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Tokens</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_twitter_tokens</span><span class="p">()</span>
+<div class="viewcode-block" id="TwitterMetricParser.get_twitter_tokens"><a class="viewcode-back" href="../../classes.html#classes.TwitterMetricParser.TwitterMetricParser.get_twitter_tokens">[docs]</a>    <span class="k">def</span> <span class="nf">get_twitter_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Tokens</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">twitter_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessions</span><span class="p">[</span><span class="s2">&quot;session_121&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+            <span class="n">select</span><span class="p">(</span><span class="n">Tokens</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Tokens</span><span class="o">.</span><span class="n">requests</span> <span class="o">&lt;</span> <span class="n">Tokens</span><span class="o">.</span><span class="n">requests_limit</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">twitter_tokens</span></div>
+
+<div class="viewcode-block" id="TwitterMetricParser.parse_profile_metrics"><a class="viewcode-back" href="../../classes.html#classes.TwitterMetricParser.TwitterMetricParser.parse_profile_metrics">[docs]</a>    <span class="k">def</span> <span class="nf">parse_profile_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            realization of abstract method for twitter resources via twitter api</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">usernames</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;usernames=&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All resources is up-to-date. Finishing&quot;</span><span class="p">)</span>
+            <span class="n">exit</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">resource</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource_list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resource_list</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+                <span class="n">username</span> <span class="o">=</span> <span class="n">parse_username_from_url</span><span class="p">(</span><span class="n">resource</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+                <span class="n">usernames</span> <span class="o">+=</span> <span class="n">username</span>
+                <span class="k">break</span>
+            <span class="n">username</span> <span class="o">=</span> <span class="n">parse_username_from_url</span><span class="p">(</span><span class="n">resource</span><span class="p">[</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+            <span class="n">usernames</span> <span class="o">+=</span> <span class="n">username</span> <span class="o">+</span> <span class="s2">&quot;,&quot;</span>
+
+        <span class="n">user_fields</span> <span class="o">=</span> <span class="s2">&quot;user.fields=public_metrics,url&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://api.twitter.com/2/users/by?</span><span class="si">{</span><span class="n">usernames</span><span class="si">}</span><span class="s2">&amp;</span><span class="si">{</span><span class="n">user_fields</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Authorization&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">twitter_tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bearer_token</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">twitter_json_response</span> <span class="o">=</span> <span class="n">serialize_response_to_json</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+        <span class="n">db_twitter_zipped_list</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">twitter_json_response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource_list</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resource_list</span> <span class="o">=</span> <span class="n">db_twitter_zipped_list</span>
+        <span class="k">for</span> <span class="n">resource</span> <span class="ow">in</span> <span class="n">db_twitter_zipped_list</span><span class="p">:</span>
+            
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Getting metrics of resource &quot;</span><span class="p">,</span> <span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+            <span class="n">profile_followers</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;public_metrics&#39;</span><span class="p">][</span><span class="s1">&#39;followers_count&#39;</span><span class="p">]</span>
+            <span class="n">profile_follow</span> <span class="o">=</span> <span class="n">resource</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;public_metrics&#39;</span><span class="p">][</span><span class="s1">&#39;following_count&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;owner_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sessions</span><span class="p">[</span><span class="s2">&quot;session_121&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                    <span class="n">update</span><span class="p">(</span><span class="n">Resources</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">Resources</span><span class="o">.</span><span class="n">url</span><span class="o">==</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">])</span>
+                    <span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="n">owner_id</span><span class="o">=</span><span class="n">resource</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sessions</span><span class="p">[</span><span class="s2">&quot;session_121&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            <span class="n">last_date_updated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sessions</span><span class="p">[</span><span class="s2">&quot;session_121&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                <span class="n">select</span><span class="p">(</span><span class="n">ResourceMetrics</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ResourceMetrics</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">soc_type</span><span class="p">,</span>
+                        <span class="n">ResourceMetrics</span><span class="o">.</span><span class="n">res_id</span> <span class="o">==</span> <span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">desc</span><span class="p">(</span><span class="n">ResourceMetrics</span><span class="o">.</span><span class="n">date</span><span class="p">))</span>
+                <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">last_date_updated</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">last_date_updated</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">():</span>
+                <span class="n">insert_object</span> <span class="o">=</span> <span class="p">[</span>
+                    <span class="n">ResourceMetrics</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">soc_type</span><span class="p">,</span>
+                        <span class="n">res_id</span><span class="o">=</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                        <span class="n">sf_type</span><span class="o">=</span><span class="s1">&#39;members&#39;</span><span class="p">,</span>
+                        <span class="n">count</span><span class="o">=</span><span class="n">profile_followers</span><span class="p">,</span>
+                        <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+                    <span class="p">),</span>
+                    <span class="n">ResourceMetrics</span><span class="p">(</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">soc_type</span><span class="p">,</span>
+                        <span class="n">res_id</span><span class="o">=</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                        <span class="n">sf_type</span><span class="o">=</span><span class="s1">&#39;friends&#39;</span><span class="p">,</span>
+                        <span class="n">count</span><span class="o">=</span><span class="n">profile_follow</span><span class="p">,</span>
+                        <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
+                    <span class="p">)</span>
+                <span class="p">]</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Followers: &quot;</span><span class="p">,</span> <span class="n">profile_followers</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Follows: &quot;</span><span class="p">,</span> <span class="n">profile_follow</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sessions</span><span class="p">[</span><span class="s2">&quot;session_121&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">bulk_save_objects</span><span class="p">(</span><span class="n">insert_object</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sessions</span><span class="p">[</span><span class="s2">&quot;session_121&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resource </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> is up-to-date&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parsed_resources_counter</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+<div class="viewcode-block" id="TwitterMetricParser.parse_profile_posts"><a class="viewcode-back" href="../../classes.html#classes.TwitterMetricParser.TwitterMetricParser.parse_profile_posts">[docs]</a>    <span class="k">def</span> <span class="nf">parse_profile_posts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            realization of abstract method for twitter posts via twitter api</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parsed_posts_buffered</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">resource</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">resource_list</span><span class="p">:</span>
+            <span class="n">profile_cursor</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+                <span class="n">tweet_fields</span> <span class="o">=</span> <span class="s2">&quot;tweet.fields=created_at,public_metrics&quot;</span>
+                <span class="n">url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;https://api.twitter.com/2/users/</span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/tweets?&quot;</span> \
+                      <span class="sa">f</span><span class="s2">&quot;max_results=100&amp;</span><span class="si">{</span><span class="n">tweet_fields</span><span class="si">}</span><span class="s2">&amp;&quot;</span> \
+                      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">profile_cursor</span><span class="si">}</span><span class="s2">&quot;</span> \
+                      <span class="sa">f</span><span class="s2">&quot;end_time=</span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;f_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">T00:00:00Z&amp;&quot;</span> \
+                      <span class="sa">f</span><span class="s2">&quot;start_time=</span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;s_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">T00:00:00Z&quot;</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s2">&quot;Authorization&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Bearer </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">twitter_tokens</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">bearer_token</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                <span class="n">twitter_json_response</span> <span class="o">=</span> <span class="n">serialize_response_to_json</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">headers</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">twitter_json_response</span><span class="p">[</span><span class="s1">&#39;meta&#39;</span><span class="p">][</span><span class="s1">&#39;result_count&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Resource </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> hasn&#39;t posts in period </span><span class="se">\</span>
+<span class="s2">                          </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;s_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> - </span><span class="si">{</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;f_date&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">break</span>
+
+                <span class="n">twitter_parsed_posts</span> <span class="o">=</span> <span class="n">twitter_json_response</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
+                <span class="k">for</span> <span class="n">twitter_parsed_post</span> <span class="ow">in</span> <span class="n">twitter_parsed_posts</span><span class="p">:</span>
+                    <span class="n">parsed_posts_buffered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">twitter_parsed_post</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;next_token&#39;</span> <span class="ow">in</span> <span class="n">twitter_json_response</span><span class="p">[</span><span class="s1">&#39;meta&#39;</span><span class="p">]:</span>
+                    <span class="n">profile_cursor</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;pagination_token=</span><span class="si">{</span><span class="n">twitter_json_response</span><span class="p">[</span><span class="s1">&#39;meta&#39;</span><span class="p">][</span><span class="s1">&#39;next_token&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&amp;&quot;</span>
+                <span class="k">if</span> <span class="n">twitter_parsed_posts</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">twitter_parsed_posts</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> \
+                                       <span class="p">[</span><span class="s1">&#39;created_at&#39;</span><span class="p">]</span> \
+                                       <span class="p">[:</span><span class="mi">10</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;s_date&#39;</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="k">for</span> <span class="n">parsed_post</span> <span class="ow">in</span> <span class="n">parsed_posts_buffered</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">add_relevant_posts</span><span class="p">(</span>
+                        <span class="n">res_id</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">resource</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;id&#39;</span><span class="p">]),</span>
+                        <span class="n">item_id</span><span class="o">=</span><span class="n">parsed_post</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">],</span>
+                        <span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;https://twitter.com/9Dq4ItB4bWzJvxd/status/</span><span class="si">{</span><span class="n">parsed_post</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">/&quot;</span><span class="p">,</span>
+                        <span class="n">text</span><span class="o">=</span><span class="n">parsed_post</span><span class="p">[</span><span class="s1">&#39;text&#39;</span><span class="p">],</span>
+                        <span class="n">likes</span><span class="o">=</span><span class="n">parsed_post</span><span class="p">[</span><span class="s1">&#39;public_metrics&#39;</span><span class="p">][</span><span class="s1">&#39;like_count&#39;</span><span class="p">],</span>
+                        <span class="n">comment</span><span class="o">=</span><span class="n">parsed_post</span><span class="p">[</span><span class="s1">&#39;public_metrics&#39;</span><span class="p">][</span><span class="s1">&#39;reply_count&#39;</span><span class="p">],</span>
+                        <span class="n">reposts</span><span class="o">=</span><span class="n">parsed_post</span><span class="p">[</span><span class="s1">&#39;public_metrics&#39;</span><span class="p">][</span><span class="s1">&#39;retweet_count&#39;</span><span class="p">],</span>
+                        <span class="n">date</span><span class="o">=</span><span class="n">parsed_post</span><span class="p">[</span><span class="s1">&#39;created_at&#39;</span><span class="p">][:</span><span class="mi">10</span><span class="p">],</span>
+                        <span class="n">db_session</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sessions</span><span class="p">[</span><span class="s2">&quot;session_121&quot;</span><span class="p">]</span>
+                    <span class="p">)</span>
+                <span class="k">break</span></div>
+
+<div class="viewcode-block" id="TwitterMetricParser.set_proxy"><a class="viewcode-back" href="../../classes.html#classes.TwitterMetricParser.TwitterMetricParser.set_proxy">[docs]</a>    <span class="k">def</span> <span class="nf">set_proxy</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="TwitterMetricParser.run"><a class="viewcode-back" href="../../classes.html#classes.TwitterMetricParser.TwitterMetricParser.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            realization of abstact method, intended to link the crucial methods and run the parser</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="s2">&quot;5744501838:AAHyz308WweSvGV9bzt-d43-Ihke2KAKI9I&quot;</span>
+        <span class="n">users</span> <span class="o">=</span> <span class="p">[</span><span class="o">-</span><span class="mi">845330765</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">telegram_logger_init</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">users</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_profile_metrics</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parse_profile_posts</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_statistic_to_telegram</span><span class="p">()</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, tab.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
